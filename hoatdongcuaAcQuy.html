@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mô phỏng Ắc quy Chì - Hóa học THPT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .formula italic { font-style: italic; font-family: serif; }
+        sub { font-size: 0.75em; line-height: 0; position: relative; vertical-align: baseline; bottom: -0.25em; font-family: sans-serif; font-style: normal; }
+        sup { font-size: 0.75em; line-height: 0; position: relative; vertical-align: baseline; top: -0.5em; font-family: sans-serif; font-style: normal; }
+        .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 flex items-center justify-center">
+
+    <div class="max-w-6xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
+        <!-- Header -->
+        <div class="bg-slate-900 text-white p-6 border-b border-slate-700">
+            <div class="flex items-center justify-center gap-4 text-center">
+                <div class="p-2 bg-amber-500 rounded-lg shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black uppercase tracking-tight">Mô phỏng điện hóa: Ác quy chì-Acid</h1>
+                    <p class="text-slate-400 text-xs font-medium tracking-widest mt-1">Thiết kế: Nguyễn Mạnh Hưng</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col lg:flex-row p-6 gap-8">
+            <!-- Main Display -->
+            <div class="flex-grow flex flex-col items-center">
+                
+                <!-- Status Bar -->
+                <div class="w-full mb-8 flex flex-wrap items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-inner">
+                    <div class="flex-grow flex flex-col gap-1 min-w-[200px]">
+                        <div class="flex justify-between text-[10px] font-bold text-slate-500 uppercase">
+                            <span>Dung lượng Ắc quy (12V)</span>
+                            <span id="capacity-text">100%</span>
+                        </div>
+                        <div class="h-4 bg-slate-200 rounded-full overflow-hidden border border-slate-300">
+                            <div id="capacity-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="text-right px-4 border-l border-slate-300 min-w-[140px]">
+                        <p class="text-xs font-bold text-slate-400 uppercase">Hiệu điện thế</p>
+                        <p class="text-xl font-mono font-black text-slate-700" id="voltage-display">12.6V</p>
+                    </div>
+                </div>
+
+                <!-- Simulation SVG -->
+                <svg id="battery-svg" viewBox="0 0 800 500" class="w-full h-auto drop-shadow-xl select-none bg-slate-50 rounded-lg">
+                    <defs>
+                        <linearGradient id="pbGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#94a3b8" />
+                            <stop offset="50%" stop-color="#cbd5e1" />
+                            <stop offset="100%" stop-color="#64748b" />
+                        </linearGradient>
+                        <linearGradient id="pbo2Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#422006" />
+                            <stop offset="50%" stop-color="#78350f" />
+                            <stop offset="100%" stop-color="#2d1002" />
+                        </linearGradient>
+                        <filter id="innerShadow">
+                            <feOffset dx="2" dy="2" />
+                            <feGaussianBlur stdDeviation="3" result="offset-blur" />
+                            <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse" />
+                            <feFlood flood-color="black" flood-opacity="0.1" result="color" />
+                            <feComposite operator="in" in="color" in2="inverse" result="shadow" />
+                            <feComposite operator="over" in="shadow" in2="SourceGraphic" />
+                        </filter>
+                    </defs>
+
+                    <!-- Battery Case -->
+                    <rect x="60" y="100" width="680" height="380" rx="20" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="4" />
+                    <rect x="60" y="100" width="680" height="40" rx="10" fill="#334155" /> 
+                    
+                    <!-- Electrolyte -->
+                    <rect id="electrolyte" x="80" y="160" width="640" height="300" rx="10" fill="rgba(14, 165, 233, 0.45)" filter="url(#innerShadow)" />
+
+                    <line x1="400" y1="140" x2="400" y2="460" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4" opacity="0.4" />
+
+                    <!-- External Circuit -->
+                    <path d="M 160 100 L 160 40 L 640 40 L 640 100" fill="none" stroke="#1e293b" stroke-width="6" stroke-linecap="round" />
+                    
+                    <!-- Negative Electrode Pb -->
+                    <g id="negative-electrode">
+                        <rect x="130" y="130" width="60" height="300" rx="4" fill="url(#pbGrad)" />
+                        <rect id="pb-sulfate" x="130" y="130" width="60" height="300" rx="4" fill="#ffffff" fill-opacity="0" />
+                    </g>
+
+                    <!-- Positive Electrode PbO2 -->
+                    <g id="positive-electrode">
+                        <rect x="610" y="130" width="60" height="300" rx="4" fill="url(#pbo2Grad)" />
+                        <rect id="pbo2-sulfate" x="610" y="130" width="60" height="300" rx="4" fill="#ffffff" fill-opacity="0" />
+                    </g>
+
+                    <!-- Labels for Electrodes (Proper chemical formula) -->
+                    <g id="electrode-labels"></g>
+
+                    <!-- Source/Load Indicator -->
+                    <g id="circuit-element" transform="translate(400, 40)">
+                        <circle id="load-bulb" r="28" fill="#cbd5e1" />
+                        <text id="circuit-text" y="5" text-anchor="middle" class="text-[9px] font-black fill-slate-900 uppercase">Ngắt</text>
+                    </g>
+
+                    <!-- Electron flow -->
+                    <g id="electron-group"></g>
+
+                    <!-- Ions (Limited inside) -->
+                    <g id="ion-group"></g>
+                </svg>
+            </div>
+
+            <!-- Controls -->
+            <div class="lg:w-80 flex flex-col gap-5">
+                <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="font-black text-slate-800 mb-4 text-xs uppercase tracking-widest flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                        Điều khiển chế độ
+                    </h3>
+                    <div class="grid gap-3">
+                        <button id="btn-discharge" class="py-4 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-between border-2 bg-white border-slate-200 text-slate-700 hover:border-amber-300">
+                            <span>CHẾ ĐỘ XẢ (PHÁT ĐIỆN)</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+                        </button>
+                        <button id="btn-charge" class="py-4 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-between border-2 bg-white border-slate-200 text-slate-700 hover:border-emerald-300">
+                            <span>CHẾ ĐỘ SẠC (NẠP ĐIỆN)</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18H19V6H5V18Z"></path><path d="M9 18V6"></path><path d="M13 18V6"></path><path d="M17 18V6"></path></svg>
+                        </button>
+                        <button id="btn-reset" class="py-3 px-4 bg-slate-200 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-300 transition-colors flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                            RESET TRẠNG THÁI
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                    <h3 class="font-black text-slate-800 mb-4 text-xs uppercase tracking-widest text-slate-400">Tùy chọn hiển thị</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between cursor-pointer" onclick="toggleOption('electrons')">
+                            <span class="text-sm font-medium text-slate-600">Luồng Electron</span>
+                            <div id="eye-electrons" class="text-blue-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between cursor-pointer" onclick="toggleOption('equations')">
+                            <span class="text-sm font-medium text-slate-600">Phương trình hóa học</span>
+                            <div id="eye-equations" class="text-blue-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 text-white p-5 rounded-2xl shadow-xl">
+                    <div class="flex items-center gap-2 mb-3 text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-blue-400">Thông số kỹ thuật</span>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <p id="density-display" class="text-2xl font-mono font-black text-blue-400">1.28</p>
+                            <p class="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Tỉ trọng (g/cm³)</p>
+                        </div>
+                        <div class="text-right">
+                            <p id="conc-display" class="text-lg font-bold">100%</p>
+                            <p class="text-[9px] text-slate-500 uppercase font-bold tracking-wider">H₂SO₄</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Equations Panel -->
+        <div id="equations-panel" class="p-8 bg-slate-50 border-t border-slate-200">
+            <h2 class="text-xl font-black text-slate-800 mb-8 text-center uppercase tracking-tight">Cơ chế phản ứng chi tiết</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border-l-8 border-slate-400">
+                    <p class="text-[10px] font-black text-slate-400 mb-3 uppercase tracking-widest">Phản ứng tại Cực Âm (-)</p>
+                    <div id="eq-negative" class="text-lg font-bold text-slate-800 italic font-serif">Chờ thao tác...</div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border-l-8 border-amber-800">
+                    <p class="text-[10px] font-black text-amber-800 opacity-40 mb-3 uppercase tracking-widest">Phản ứng tại Cực Dương (+)</p>
+                    <div id="eq-positive" class="text-lg font-bold text-slate-800 italic font-serif">Chờ thao tác...</div>
+                </div>
+                <div class="md:col-span-2 bg-gradient-to-r from-slate-800 to-slate-900 p-8 rounded-2xl text-white shadow-2xl text-center">
+                    <p class="text-[10px] font-black text-slate-500 mb-4 uppercase tracking-[0.3em]">Phương trình tổng quát (Phản ứng Thuận Nghịch)</p>
+                    <div id="eq-total" class="text-xl md:text-2xl font-black flex flex-wrap items-center justify-center gap-4 italic font-serif"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 bg-slate-900 text-slate-500 text-[10px] text-center uppercase tracking-[0.4em] font-black">
+            Giao diện giảng dạy chuyên dụng cho Hóa học THPT
+        </div>
+    </div>
+
+    <script>
+        // State
+        let mode = 'idle'; 
+        let progress = 0; 
+        let showElectrons = true;
+        let showEquations = true;
+        let tick = 0;
+
+        // Configuration
+        const ions_so4 = [];
+        const ions_h = [];
+        const num_so4 = 8;
+        const num_h = 10;
+
+        // Initialize Ions
+        for(let i=0; i<num_so4; i++) {
+            ions_so4.push({
+                seedX: (i / num_so4) * 540 + 130,
+                seedY: (i * 30 + 200) % 220 + 200,
+                id: i
+            });
+        }
+        for(let i=0; i<num_h; i++) {
+            ions_h.push({
+                seedX: (i / num_h) * 500 + 150,
+                seedY: (i * 25 + 220) % 220 + 200,
+                id: i
+            });
+        }
+
+        // Formula Helper
+        function formatFormula(str) {
+            return str.replace(/_(\d+)/g, '<sub>$1</sub>')
+                      .replace(/\^\{([^\}]+)\}/g, '<sup>$1</sup>')
+                      .replace(/\^([+\-e])/g, '<sup>$1</sup>');
+        }
+
+        function createSVGFormula(x, y, content, fontSize = "8px", color = "white", fontWeight = "bold") {
+            const parts = content.split(/(_\d+|\^\{[^\}]+\}|\^[+\-\w\d]+)/g);
+            let html = `<text x="${x}" y="${y}" text-anchor="middle" fill="${color}" class="${fontWeight === 'bold' ? 'font-bold' : ''}" style="font-size: ${fontSize}; pointer-events: none;">`;
+            parts.forEach(part => {
+                if (!part) return;
+                if (part.startsWith('_')) {
+                    html += `<tspan dy="0.3em" style="font-size: 0.75em;">${part.slice(1)}</tspan>`;
+                } else if (part.startsWith('^')) {
+                    const val = part.startsWith('^{') ? part.slice(2, -1) : part.slice(1);
+                    html += `<tspan dy="-0.45em" style="font-size: 0.75em;">${val}</tspan>`;
+                } else {
+                    html += `<tspan dy="0">${part}</tspan>`;
+                }
+            });
+            html += `</text>`;
+            return html;
+        }
+
+        // DOM Elements
+        const btnDischarge = document.getElementById('btn-discharge');
+        const btnCharge = document.getElementById('btn-charge');
+        const btnReset = document.getElementById('btn-reset');
+        const capacityBar = document.getElementById('capacity-bar');
+        const capacityText = document.getElementById('capacity-text');
+        const voltageDisplay = document.getElementById('voltage-display');
+        const densityDisplay = document.getElementById('density-display');
+        const concDisplay = document.getElementById('conc-display');
+        const pbSulfate = document.getElementById('pb-sulfate');
+        const pbo2Sulfate = document.getElementById('pbo2-sulfate');
+        const electrolyte = document.getElementById('electrolyte');
+        const ionGroup = document.getElementById('ion-group');
+        const electronGroup = document.getElementById('electron-group');
+        const electrodeLabels = document.getElementById('electrode-labels');
+        const loadBulb = document.getElementById('load-bulb');
+        const circuitText = document.getElementById('circuit-text');
+        const eqNegative = document.getElementById('eq-negative');
+        const eqPositive = document.getElementById('eq-positive');
+        const eqTotal = document.getElementById('eq-total');
+        const eqPanel = document.getElementById('equations-panel');
+
+        // Initial UI
+        electrodeLabels.innerHTML = 
+            createSVGFormula(160, 455, "Bản cực Pb (-)", "11px", "#64748b") +
+            createSVGFormula(640, 455, "Bản cực PbO_2 (+)", "11px", "#64748b");
+
+        function updateEquations() {
+            if (mode === 'discharge') {
+                eqNegative.innerHTML = formatFormula("Pb + SO_4^{2-} → PbSO_4 + 2e^-");
+                eqPositive.innerHTML = formatFormula("PbO_2 + 4H^+ + SO_4^{2-} + 2e^- → PbSO_4 + 2H_2O");
+            } else if (mode === 'charge') {
+                eqNegative.innerHTML = formatFormula("PbSO_4 + 2e^- → Pb + SO_4^{2-}");
+                eqPositive.innerHTML = formatFormula("PbSO_4 + 2H_2O → PbO_2 + 4H^+ + SO_4^{2-} + 2e^-");
+            } else {
+                eqNegative.innerHTML = "Chờ thao tác...";
+                eqPositive.innerHTML = "Chờ thao tác...";
+            }
+            eqTotal.innerHTML = `
+                <span>${formatFormula("Pb + PbO_2 + 2H_2SO_4")}</span>
+                <div class="flex flex-col items-center bg-white/10 px-4 py-1 rounded-lg not-italic">
+                    <span class="text-[9px] text-amber-400 font-bold uppercase italic">Xả</span>
+                    <span class="text-2xl leading-none">⇌</span>
+                    <span class="text-[9px] text-emerald-400 font-bold uppercase italic">Sạc</span>
+                </div>
+                <span>${formatFormula("2PbSO_4 + 2H_2O")}</span>
+            `;
+        }
+        updateEquations();
+
+        // Animation Loop
+        function animate() {
+            tick++;
+            
+            // Progress logic
+            if (mode === 'discharge') {
+                progress = Math.min(progress + 0.02, 100);
+            } else if (mode === 'charge') {
+                progress = Math.max(progress - 0.02, 0);
+            }
+
+            // Update UI Bars
+            const cap = 100 - progress;
+            capacityBar.style.width = cap + '%';
+            capacityText.innerText = Math.round(cap) + '%';
+            capacityBar.className = `h-full transition-all duration-300 ${cap < 15 ? 'bg-red-500' : cap < 50 ? 'bg-amber-500' : 'bg-emerald-500'}`;
+
+            // Voltage & Density
+            let volt;
+            if (mode === 'charge') volt = (13.2 + (1 - progress/100) * 0.6).toFixed(1);
+            else if (mode === 'discharge') volt = (12.6 - (progress/100) * 1.2).toFixed(1);
+            else volt = (12.6 - (progress/100) * 0.4).toFixed(1);
+            voltageDisplay.innerText = volt + 'V';
+            
+            const density = (1.28 - (progress/100) * 0.15).toFixed(2);
+            densityDisplay.innerText = density;
+            concDisplay.innerText = Math.round(cap) + '%';
+
+            // Visual Effects (Sulfate & Electrolyte color)
+            pbSulfate.setAttribute('fill-opacity', (progress / 100) * 0.75);
+            pbo2Sulfate.setAttribute('fill-opacity', (progress / 100) * 0.75);
+            electrolyte.setAttribute('fill', `rgba(14, 165, 233, ${0.1 + (1 - progress / 100) * 0.4})`);
+
+            // Bulbs & Labels
+            if (mode === 'discharge') {
+                loadBulb.setAttribute('fill', '#fef08a');
+                loadBulb.classList.add('animate-pulse');
+                circuitText.innerText = 'Tải 12V';
+            } else if (mode === 'charge') {
+                loadBulb.setAttribute('fill', '#10b981');
+                loadBulb.classList.remove('animate-pulse');
+                circuitText.innerText = 'Nạp 13V';
+            } else {
+                loadBulb.setAttribute('fill', '#cbd5e1');
+                loadBulb.classList.remove('animate-pulse');
+                circuitText.innerText = 'Ngắt';
+            }
+
+            // Draw Electrons
+            let eHtml = '';
+            if (showElectrons && mode !== 'idle') {
+                for(let i=0; i<6; i++) {
+                    const offset = (tick * 2.5 + i * 160) % 960;
+                    let ex, ey;
+                    if (mode === 'discharge') { // Negative -> Positive
+                        if (offset < 60) { ex = 160; ey = 100 - offset; }
+                        else if (offset < 540) { ex = 160 + (offset - 60); ey = 40; }
+                        else if (offset < 600) { ex = 640; ey = 40 + (offset - 540); }
+                        else continue;
+                    } else { // Positive -> Negative
+                        if (offset < 60) { ex = 640; ey = 100 - offset; }
+                        else if (offset < 540) { ex = 640 - (offset - 60); ey = 40; }
+                        else if (offset < 600) { ex = 160; ey = 40 + (offset - 540); }
+                        else continue;
+                    }
+                    eHtml += `<circle cx="${ex}" cy="${ey}" r="5" fill="#2563eb" stroke="white" stroke-width="1" />`;
+                }
+                eHtml += createSVGFormula(400, 15, "Dòng e^-", "10px", "#2563eb");
+            }
+            electronGroup.innerHTML = eHtml;
+
+            // Draw Ions
+            let iHtml = '';
+            if (mode !== 'idle') {
+                // SO4
+                ions_so4.forEach((ion, i) => {
+                    const jitterX = Math.sin(tick * 0.02 + i) * 12;
+                    const jitterY = Math.cos(tick * 0.025 + i) * 12;
+                    let driftX = 0;
+                    const targetX = ion.seedX < 400 ? 160 : 640;
+                    if (mode === 'discharge') driftX = (targetX - ion.seedX) * (progress / 100) * 1.5;
+                    else driftX = (targetX - ion.seedX) * ((100 - progress) / 100) * -1.2;
+
+                    const posX = ion.seedX + driftX + jitterX;
+                    const posY = ion.seedY + jitterY;
+                    if (posX > 85 && posX < 715 && posY > 165 && posY < 455) {
+                        iHtml += `<circle cx="${posX}" cy="${posY}" r="14" fill="#a855f7" opacity="0.8" />`;
+                        iHtml += createSVGFormula(posX, posY + 3, "SO_4^{2-}", "7px");
+                    }
+                });
+                // H+
+                ions_h.forEach((ion, i) => {
+                    const jitterX = Math.cos(tick * 0.03 + i) * 10;
+                    const jitterY = Math.sin(tick * 0.025 + i) * 10;
+                    let driftX = 0;
+                    if (mode === 'discharge') driftX = (640 - ion.seedX) * (progress / 100) * 1.5;
+                    else driftX = -(640 - ion.seedX) * ((100 - progress) / 100) * 0.8;
+
+                    const posX = ion.seedX + driftX + jitterX;
+                    const posY = ion.seedY + jitterY;
+                    if (posX > 85 && posX < 715 && posY > 165 && posY < 455) {
+                        iHtml += `<circle cx="${posX}" cy="${posY}" r="10" fill="#ef4444" opacity="0.8" />`;
+                        iHtml += createSVGFormula(posX, posY + 3, "H^+", "7px");
+                    }
+                });
+            }
+            ionGroup.innerHTML = iHtml;
+
+            requestAnimationFrame(animate);
+        }
+
+        // Control Logic
+        btnDischarge.onclick = () => {
+            mode = (mode === 'discharge') ? 'idle' : 'discharge';
+            btnDischarge.className = mode === 'discharge' ? 'py-4 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-between border-2 bg-amber-500 border-amber-600 text-white shadow-lg translate-y-[-2px]' : 'py-4 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-between border-2 bg-white border-slate-200 text-slate-700 hover:border-amber-300';
+            btnCharge.className = 'py-4 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-between border-2 bg-white border-slate-200 text-slate-700 hover:border-emerald-300';
+            updateEquations();
+        };
+
+        btnCharge.onclick = () => {
+            mode = (mode === 'charge') ? 'idle' : 'charge';
+            btnCharge.className = mode === 'charge' ? 'py-4 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-between border-2 bg-emerald-600 border-emerald-700 text-white shadow-lg translate-y-[-2px]' : 'py-4 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-between border-2 bg-white border-slate-200 text-slate-700 hover:border-emerald-300';
+            btnDischarge.className = 'py-4 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-between border-2 bg-white border-slate-200 text-slate-700 hover:border-amber-300';
+            updateEquations();
+        };
+
+        btnReset.onclick = () => {
+            mode = 'idle';
+            progress = 0;
+            btnDischarge.className = 'py-4 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-between border-2 bg-white border-slate-200 text-slate-700 hover:border-amber-300';
+            btnCharge.className = 'py-4 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-between border-2 bg-white border-slate-200 text-slate-700 hover:border-emerald-300';
+            updateEquations();
+        };
+
+        function toggleOption(opt) {
+            if(opt === 'electrons') {
+                showElectrons = !showElectrons;
+                document.getElementById('eye-electrons').className = showElectrons ? 'text-blue-600' : 'text-slate-300';
+            }
+            if(opt === 'equations') {
+                showEquations = !showEquations;
+                document.getElementById('eye-equations').className = showEquations ? 'text-blue-600' : 'text-slate-300';
+                eqPanel.style.display = showEquations ? 'block' : 'none';
+            }
+        }
+
+        // Start
+        requestAnimationFrame(animate);
+    </script>
+</body>
+</html>
